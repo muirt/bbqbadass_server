@@ -57,7 +57,7 @@ class InputRecord:
 
 Parameters = Parameters()
 InputList = []
-FileName = "config.json"
+FileName = "config1.json"
 
 
 def Serialize():
