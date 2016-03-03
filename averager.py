@@ -19,3 +19,7 @@ def getAverage(channel):
 		sum += reading
 	average = sum/len(thermocoupleReadingsList[channel])
 	return average
+
+def clearAverage():	
+	for index in range(len(thermocoupleReadingsList)):
+		del thermocoupleReadingsList[index][:]

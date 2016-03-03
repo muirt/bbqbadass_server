@@ -2,6 +2,7 @@ currentInputReadings = {}
 currentOutputReadings = {}
 
 ShouldControl = False
+ShouldPauseControl = False
 
 def getInputState(inputName):
 	value = None	

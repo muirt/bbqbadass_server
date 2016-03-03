@@ -13,8 +13,14 @@ class ControlThread:
 		self.ShouldStop = False
 		CurrentIO.ShouldControl = True
 		while(self.ShouldStop == False):
-			
-			if CurrentIO.ShouldControl:				
+			if CurrentIO.ShouldPauseControl:
+				#print "pausing control"
+				time.sleep(configuration.Parameters.CollectionPeriod * 2)
+				CurrentIO.ShouldPauseControl = False
+				#print "resuming control"
+				
+
+			elif CurrentIO.ShouldControl:				
 				self.OutputController.ControlLoopPass(configuration.Parameters.ControlOutput,
 					configuration.Parameters.ControlInput,
 					configuration.Parameters.SetPoint,

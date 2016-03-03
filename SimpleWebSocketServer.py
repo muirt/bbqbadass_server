@@ -121,7 +121,6 @@ class WebSocket(object):
       """
           Called when a websocket client connects to the server.
       """
-      print "connected"
       pass
 
    def handleClose(self):
@@ -580,7 +579,18 @@ class SimpleWebSocketServer(object):
       self.serversocket.listen(5)
       self.selectInterval = selectInterval
       self.connections = {}
-      self.listeners = [self.serversocket]
+      self.unix_connections = {}
+
+      self.unix_sock_file_name = './unix_socket'
+      self.unix_sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+
+      self.unix_sock.setblocking(0)
+      self.unix_sock.bind(self.unix_sock_file_name)
+
+      # Listen for incoming connections
+      self.unix_sock.listen(1)
+
+      self.listeners = [self.serversocket, self.unix_sock]
 
    def _decorateSocket(self, sock):
       return sock
@@ -599,6 +609,8 @@ class SimpleWebSocketServer(object):
             pass
 
    def serveforever(self):
+      self.unix_socks = []
+      self.server_socks = []
       while True:
          writers = []
          for fileno in self.listeners:
@@ -613,6 +625,8 @@ class SimpleWebSocketServer(object):
             rList, wList, xList = select(self.listeners, writers, self.listeners, self.selectInterval)
          else:
             rList, wList, xList = select(self.listeners, writers, self.listeners)
+         #print "select woke up"
+
          for ready in wList:
             client = None
             try:
@@ -649,41 +663,60 @@ class SimpleWebSocketServer(object):
                   pass
 
          for ready in rList:
+
             if ready == self.serversocket:
                try:
+
                   sock, address = self.serversocket.accept()
                   newsock = self._decorateSocket(sock)
                   newsock.setblocking(0)
                   fileno = newsock.fileno()
                   self.listeners.append(fileno)
+                  self.server_socks.append(sock)
                   self.connections[fileno] = self._constructWebSocket(newsock, address)
                except Exception as n:
                   if sock is not None:
                      sock.close()
+            elif ready == self.unix_sock:
+                connection, client_address = self.unix_sock.accept()
+                fileno = connection.fileno()
+                self.listeners.append(fileno)
+                self.unix_socks.append(connection)
+                connection.setblocking(0)
+                self.unix_connections[fileno] = connection
+
             else:
-               client = None
-               try:
-                  client = self.connections[ready]
-                  client._handleData()
-               except Exception as n:
-                  if client:
-                     client.client.close()
 
-                  try:
-                     if client:
-                        client.handleClose()
-                  except:
-                     pass
+               if ready in self.unix_connections.keys():
+                   msg =  self.unix_connections[ready].recv(8192)
+                   for key in self.connections.keys():  
+                       self.connections[key].sendMessage(msg)
 
-                  try:
-                     del self.connections[ready]
-                  except:
-                     pass
+               elif ready in self.connections.keys():
 
-                  try:
-                     self.listeners.remove(ready)
-                  except:
-                     pass
+                   client = None
+                   try:
+                      client = self.connections[ready]
+                      client._handleData()
+                   except Exception as n:
+                      if client:
+                         client.client.close()
+
+                      try:
+                         if client:
+                            client.handleClose()
+                      except:
+                         pass
+
+                      try:
+                         del self.connections[ready]
+                      except:
+                         pass
+
+                      try:
+                         self.listeners.remove(ready)
+                      except:
+                         pass
 
          for failed in xList:
             if failed == self.serversocket:

@@ -1,6 +1,5 @@
 import configuration
 import unicodeHelper
-import recorder
 import time
 
 class MenuRequest:
@@ -56,8 +55,9 @@ class MReqCurrentLog(MenuRequest):
 		return timeString
 		
 	def GetMenuData(self):		
-		return placeResponseInMessage(recorder.getCurrentRecordingDetails(), 'current_log')
-		
+		return "" # placeResponseInMessage(recorder.getCurrentRecordingDetails(), 'current_log')
+		 #phant TODO
+		 
 class MReqSavedLogs(MenuRequest):	
 	
 	def __init__(self):
@@ -65,7 +65,8 @@ class MReqSavedLogs(MenuRequest):
 		Register(self)
 		
 	def GetMenuData(self):
-		logs = placeResponseInMessage(recorder.listAllRecordings(), 'saved_logs')		
+		logs = "" #placeResponseInMessage(recorder.listAllRecordings(), 'saved_logs')		
+		 #phant TODO
 		return logs
 				
 
