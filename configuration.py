@@ -5,12 +5,13 @@ class Parameters:
 	CollectionPeriod = 3
 	StoragePeriod = 3
 	SetPoint = 225
-	Hysteresis = 5
+	Hysteresis = 3
 	ControlInput = 1
 	ControlOutput = 0
 	CurrentTempList = []
 	OnState = True	
-	
+	MeatTemperatureGoal = 203	
+	Units = "F"
 	
 	def Serialize(self):
 		configString = json.dumps(
@@ -22,7 +23,9 @@ class Parameters:
 			"ControlInput" : self.ControlInput,
 			"ControlOutput" : self.ControlOutput,
 			"OnState": self.OnState,
-			"CurrentTempList": self.CurrentTempList
+			"CurrentTempList": self.CurrentTempList,
+			"MeatTemperatureGoal": self.MeatTemperatureGoal,
+			"Units": self.Units
 		})           
 		return configString
     	
@@ -36,6 +39,8 @@ class Parameters:
 		self.ControlOutput = data["ControlOutput"]
 		self.OnState = data["OnState"]
 		self.CurrentTempList = data["CurrentTempList"]
+		self.MeatTemperatureGoal = data["MeatTemperatureGoal"]
+		self.Units = data["Units"]
 
 class InputRecord:
 
@@ -108,9 +113,11 @@ def CreateDefault():
     Parameters.CollectionPeriod = 3
     Parameters.StoragePeriod = 3    
     Parameters.SetPoint = 50
-    Parameters.Hysteresis = 5
+    Parameters.Hysteresis = 3
     Parameters.ControlInput = 1
     Parameters.ControlOutput = 0
     Parameters.OnState = True
     Parameters.CurrentTempList = [0,1]
+    Parameters.MeatTemperatureGoal = 203
+    Parameters.Units = "F"
     Save()

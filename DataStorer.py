@@ -1,5 +1,5 @@
 import time
-import recorder
+
 import configuration
 import CurrentIO
 
@@ -14,11 +14,12 @@ def StoreData():
 		name = input.Name
 		state = CurrentIO.getInputState(name)
 		inputEntry = {'name': name, 'state': state}
-		dbEntry['inputs'].append(inputEntry)	
-	recorder.addInputReading(dbEntry)	
+		#dbEntry['inputs'].append(inputEntry)	
+	#recorder.addInputReading(dbEntry)	
+	
 	##get output states and put them in the output database	
 	outputEntry = { 'state': CurrentIO.getOutputState('controlOutput'), 'time': currentTime}
-	recorder.addOutputReading(outputEntry)
+	#recorder.addOutputReading(outputEntry)
 		
 		
 		

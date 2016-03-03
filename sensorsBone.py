@@ -1,24 +1,26 @@
 #sensorsLime.py
 
-import spiDriverLime
+
 import MAX31855
 
 import averager
-import gpioDriverLime
+
 import time
 import configuration
 
 
 def setup():
-	spiDriverLime.setup()
+	#spiDriverLime.setup()
+	pass
 	
 def SelectThermocoupleChannel(channel):
-	if channel < 2:	
-		gpioDriverLime.outputLevel('TCSEL1', channel)
-		gpioDriverLime.outputLevel('TCSEL2', channel)		
+	#if channel < 2:	
+		#gpioDriverLime.outputLevel('TCSEL1', channel)
+		#gpioDriverLime.outputLevel('TCSEL2', channel)		
+	pass
 	
 def GetThermocoupleTemperature(channel):
-	temperature = -1
+	'''temperature = -1
 	rawTCBytes = spiDriverLime.read()	
 	if rawTCBytes:
 		temperature = MAX31855.ProcessBytes(rawTCBytes)		
@@ -27,10 +29,13 @@ def GetThermocoupleTemperature(channel):
 	if temperature > 3000:
 		temperature = 0
 	return int(averager.addReadingGetAverage(channel, temperature))
+	'''
 
 def GetProbeValue(channel):
+	'''
 	SelectThermocoupleChannel(channel)
 	time.sleep(0.2)
 	value = GetThermocoupleTemperature(channel)	
-	return value
+	return value'''
+	return 70
 

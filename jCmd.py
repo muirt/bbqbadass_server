@@ -4,15 +4,12 @@ import unicodeHelper
 import MReq
 
 import time
-import recorder
-
-import dateHelper
-import grapher
 import CurrentIO
-
-import debugger
 import gpioDriverLime as gpio
 import os
+import updateGUI
+import averager
+import tempUtilities
 
 jCmdDictionary = {}
 
@@ -41,17 +38,46 @@ class JsonCommand:
 		return self.key == key
 		
 	def processCommand(self, value):
-		debugger.dPrint(str(value))
+		pass
 
 
 class JCmdHysteresisSet(JsonCommand):
 	def __init__(self):
 		JsonCommand.__init__(self)
-		self.key = "hysteresis_set"
+		self.key = "hysteresis_change"
+		self.hasReturnValue = True
 		register(self)
 		
 	def processCommand(self, value):
-		configuration.Parameters.Hysteresis = int(value)
+		if value == "up":
+			if configuration.Parameters.Hysteresis < 10:
+				configuration.Parameters.Hysteresis += 1
+		elif value == "down":
+			if configuration.Parameters.Hysteresis > 0: 
+				configuration.Parameters.Hysteresis -=1
+		configuration.Save()
+		
+		hysteresis = str(configuration.Parameters.Hysteresis)	
+		
+		result = placeResponseInMessage('hysteresis', hysteresis, 'response')
+		
+		return str(result)	
+
+class JCmdMeatTempGoal(JsonCommand):
+	def __init__(self):
+		JsonCommand.__init__(self)
+		self.key = "meat_temperature_goal"
+		self.hasReturnValue = True
+		register(self)
+		
+	def processCommand(self, value):
+		if int(value):
+			configuration.Parameters.MeatTemperatureGoal = int(value)		
+		print configuration.Parameters.MeatTemperatureGoal
+		configuration.Save()		
+		goal_temp = str(configuration.Parameters.MeatTemperatureGoal)			
+		result = placeResponseInMessage('meat_temperature_goal', goal_temp, 'response')				
+		return str(result)	
 
 
 class JCmdCollectionPeriodSet(JsonCommand):
@@ -100,15 +126,9 @@ class JCmdSetPointSet(JsonCommand):
 		
 		setPoint = str(configuration.Parameters.SetPoint)	
 		
-		dataDict = {
-					'secret':'badass', 
-					'target':'periodic_update', 
-					'value': { 
-								'set_point': setPoint								
-							  }
-					}		
+		result = placeResponseInMessage('set_point', setPoint, 'response')
 		
-		return str(dataDict)	
+		return str(result)	
 		
 class JCmdControlOutputSet(JsonCommand):
 	def __init__(self):
@@ -130,7 +150,7 @@ class JCmdCreateNewLog(JsonCommand):
 		exists = False
 		result = ""
 		if len(value):			
-			exists = recorder.startRecording(value)		
+			exists = False  #phant TODO	
 		if exists:
 			result = placeResponseInMessage(value, "recording_already_exists")		
 		return result	
@@ -143,11 +163,11 @@ class JCmdFinishCurrentLog(JsonCommand):
 		register(self)
 		
 	def processCommand(self, value):
-		recorder.finishRecording()
-		
-		##send confirmation, which triggers menu refresh
-		return "result=success"
-	
+		#recorder.finishRecording()   #phant TODO
+		emptyDict = {'name': 'Not', 'time': 'Recording'}
+		result = placeResponseInMessage("details", str(emptyDict) , 'recording')
+		return result	
+			
 class JCmdDeleteLog(JsonCommand):
 	def __init__(self):
 		JsonCommand.__init__(self)
@@ -157,7 +177,7 @@ class JCmdDeleteLog(JsonCommand):
 		
 	def processCommand(self, value):
 		print value
-		recorder.deleteRecording(value)
+		#recorder.deleteRecording(value)  #phant TODO
 		if value != "current":
 			return MReq.MReqDictionary["list_saved_logs"].GetMenuData()	
 		else:
@@ -172,8 +192,8 @@ class JCmdShowCurrentLog(JsonCommand):
 		register(self)
 		
 	def processCommand(self, value):	
-		details = recorder.getCurrentRecordingDetails()
-		result = placeResponseInMessage(str(details), 'current_recording_details')
+		#details = recorder.getCurrentRecordingDetails()  #phant TODO
+		result = placeResponseInMessage("details", str(details), 'recording')
 		return result	
 			
 class JCmdShowSavedLog(JsonCommand):
@@ -185,7 +205,7 @@ class JCmdShowSavedLog(JsonCommand):
 		
 	def processCommand(self, value):	
 		logIndex = value.split("_")[1]
-		details = recorder.getRecordingDetailsByIndex(logIndex)
+		#details = recorder.getRecordingDetailsByIndex(logIndex)  #phant TODO
 		result = placeResponseInMessage(str(details), 'saved_recording_details')
 		return result		
 	
@@ -198,7 +218,7 @@ class JCmdGraphLog(JsonCommand):
 		register(self)
 		
 	def processCommand(self, value):			
-		dataset = grapher.getDataset(value)
+		#dataset = grapher.getDataset(value)  #phant TODO
 		return placeResponseInMessage(str(dataset), 'graph_data')
 		
 class JCmdMenuRequest(JsonCommand):
@@ -212,6 +232,8 @@ class JCmdMenuRequest(JsonCommand):
 		result = None
 		if value in MReq.MReqDictionary.keys():
 			result = MReq.MReqDictionary[value].GetMenuData()		
+		print str(result)
+
 		return result
 
 class JCmdLogin(JsonCommand):
@@ -226,10 +248,42 @@ class JCmdLogin(JsonCommand):
 			value_list = value.split(",")
 			if len(value_list) == 2:
 				os.system("~/update_login.sh {0} {1}".format(value_list[0], value_list[1]))
-		print "asdf"
 		os.system("~/reset_interface.sh client")
 
+class JCmdUnitSet(JsonCommand):
+	def __init__(self):	
+		JsonCommand.__init__(self)
+		self.key = "units"
+		self.hasReturnValue = True
+		register(self)
 		
+	def processCommand(self, value):
+		#all numeric values must now be updated, 
+		#as their unit is being changed
+		
+		if value == "F":
+			if configuration.Parameters.Units == "C":
+				configuration.Parameters.SetPoint =  tempUtilities.CtoF(configuration.Parameters.SetPoint)
+				configuration.Parameters.MeatTemperatureGoal = tempUtilities.CtoF(configuration.Parameters.MeatTemperatureGoal)
+				configuration.Parameters.Units = "F"
+		elif value == "C":
+			if configuration.Parameters.Units == "F":
+				configuration.Parameters.SetPoint =  tempUtilities.FtoC(configuration.Parameters.SetPoint)
+				configuration.Parameters.MeatTemperatureGoal = tempUtilities.FtoC(configuration.Parameters.MeatTemperatureGoal)
+				configuration.Parameters.Units = "C"
+		
+		averager.clearAverage()
+		configuration.Save()
+
+		CurrentIO.ShouldPauseControl = True
+
+		#return a special string that tells the caller, the websocket server, 
+		#to use its own update function as this cmd's response
+		return updateGUI.updateGUI()
+
+
+jCmdUnitSet = JCmdUnitSet();
+jcmdMeatTempGoal = JCmdMeatTempGoal();		
 jcmdLogin = JCmdLogin();
 jcmdHysteresisSet = JCmdHysteresisSet()
 jcmdCollectionPeriodSet = JCmdCollectionPeriodSet()
@@ -246,8 +300,15 @@ jCmdOutputMode = JCmdOutputMode()
 
 	
 	
-def placeResponseInMessage(response, key):
-	messageDict = {'secret': 'badass', 'target': key, 'value': response}
+def placeResponseInMessage(string, val, key):
+
+	messageDict = {
+			'secret':'badass', 
+			'target':key, 
+			'value': { 
+						string: val
+					  }
+			}
 	return  str(messageDict).replace('"', ' ')
 	
 def process(key, value):

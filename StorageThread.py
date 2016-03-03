@@ -1,5 +1,4 @@
 import configuration
-import DataStorer
 import time
 
 class StorageThread():
@@ -11,5 +10,4 @@ class StorageThread():
 		storagePeriod = configuration.Parameters.StoragePeriod		
 		
 		while(self.ShouldStop == False):
-			DataStorer.StoreData()
 			time.sleep(storagePeriod)
