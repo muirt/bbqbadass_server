@@ -6,7 +6,7 @@ import processorDefinition
 
 import Queue
 
-import sensorsLime as sensors
+#import sensorsLime as sensors
 
 import CurrentIO
 
@@ -16,7 +16,7 @@ class CollectThread:
 	
 	def __init__(self):
 		self.ShouldStop = False
-		sensors.setup()
+		#sensors.setup()
 		self.count = 0		
 
 
@@ -36,8 +36,9 @@ class CollectThread:
 		inputReadingList = []
 			 
 		for input in inputList:					
-			value = sensors.GetProbeValue(input.MultiplexerChannel) 					
-			CurrentIO.setInputState(input.Name, value)
+			pass
+			#value = sensors.GetProbeValue(input.MultiplexerChannel) 					
+			#CurrentIO.setInputState(input.Name, value)
 			
 			
 					

@@ -2,14 +2,19 @@ import json
 import configuration
 import unicodeHelper
 import MReq
-
 import time
 import CurrentIO
-import gpioDriverLime as gpio
 import os
 import updateGUI
 import averager
 import tempUtilities
+
+import processorDefinition
+if processorDefinition.processor == "BBB":
+	import gpioDriverBBB as gpio
+elif processorDefinition.processor == "Lime":
+	import gpioDriverLime as gpio
+
 
 jCmdDictionary = {}
 
