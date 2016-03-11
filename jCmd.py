@@ -8,6 +8,8 @@ import os
 import updateGUI
 import averager
 import tempUtilities
+import filesystem
+import grapher
 
 import processorDefinition
 if processorDefinition.processor == "BBB":
@@ -158,6 +160,11 @@ class JCmdCreateNewLog(JsonCommand):
 			exists = False  #phant TODO	
 		if exists:
 			result = placeResponseInMessage(value, "recording_already_exists")		
+
+		#fs = filesystem.filesystem()
+
+		configuration.Parameters.CurrentRecordingName = value
+		configuration.Parameters.CurrentlyRecording = True
 		return result	
 	
 class JCmdFinishCurrentLog(JsonCommand):
@@ -210,7 +217,7 @@ class JCmdShowSavedLog(JsonCommand):
 		
 	def processCommand(self, value):	
 		logIndex = value.split("_")[1]
-		#details = recorder.getRecordingDetailsByIndex(logIndex)  #phant TODO
+		details = recorder.getRecordingDetailsByIndex(logIndex)  #phant TODO
 		result = placeResponseInMessage(str(details), 'saved_recording_details')
 		return result		
 	
@@ -222,9 +229,9 @@ class JCmdGraphLog(JsonCommand):
 		self.hasReturnValue = True
 		register(self)
 		
-	def processCommand(self, value):			
-		#dataset = grapher.getDataset(value)  #phant TODO
-		return placeResponseInMessage(str(dataset), 'graph_data')
+	def processCommand(self, value):		
+		dataset = grapher.getDataset(value) 
+		return placeResponseInMessage('graph_data', dataset, 'graphing')
 		
 class JCmdMenuRequest(JsonCommand):
 	def __init__(self):	
