@@ -15,3 +15,8 @@ def getDataset(log):
 		dataDict = {"title": unicodeHelper.getAscii(log), "graphData": data}
 
 	return str(dataDict)
+
+def get_all_files():
+	fs = filesystem.filesystem()
+
+	return fs.list_all_files() 

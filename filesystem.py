@@ -44,7 +44,7 @@ class filesystem():
 		file = open("all_files.txt", "r")
 		lines = file.readlines()
 		for index in range(len(lines)):
-			lines[index] = lines[index].replace("\n", "")
+			lines[index] = lines[index].replace("\n", "").replace(".csv", "")
 		file.close()
 		os.system("rm all_files.txt")
 		return lines

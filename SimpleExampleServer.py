@@ -16,20 +16,33 @@ import json
 import configuration
 import Queue
 import CurrentIO
-
+import grapher
+import jCmd
 import unicodeHelper
 import updateGUI
 
 
 class SimpleEcho(WebSocket):
-
+  
    def handleMessage(self):
       result = parser.JsonParse(self.data)      
       if result != None:
          self.sendMessage(result)    
 
-   def handleConnected(self):
-      pass
+   def handleConnected(self):      
+      updateString = updateGUI.updateGUI() 
+      self.sendMessage(updateString)
+      
+      logs = grapher.get_all_files()
+      log_dict_list = []      
+      for log in logs:
+         log_dict = {}
+         log_dict["name"] = log
+         log_dict["duration"] = "1h32m"
+         log_dict_list.append(log_dict)
+
+      result = jCmd.placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
+      self.sendMessage(result)
 
    def handleClose(self):
       pass

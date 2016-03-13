@@ -263,9 +263,10 @@ class WebSocket(object):
                   k = key.encode('ascii') + GUID_STR.encode('ascii')
                   k_s = base64.b64encode(hashlib.sha1(k).digest()).decode('ascii')
                   hStr = HANDSHAKE_STR % {'acceptstr': k_s}
-                  self.sendq.append((BINARY, hStr.encode('ascii')))
+                  self.sendq.append((BINARY, hStr.encode('ascii')))                  
                   self.handshaked = True
                   self.handleConnected()
+                  #self.handshaked = True
                except Exception as e:
                   raise Exception('handshake failed: %s', str(e))
 

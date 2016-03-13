@@ -196,16 +196,23 @@ class JCmdDeleteLog(JsonCommand):
 			return None
 			
 	
-class JCmdShowCurrentLog(JsonCommand):
+class JCmdShowLogs(JsonCommand):
 	def __init__(self):
 		JsonCommand.__init__(self)
-		self.key = "show_current_log"
+		self.key = "list_logs"
 		self.hasReturnValue = True
 		register(self)
 		
 	def processCommand(self, value):	
-		#details = recorder.getCurrentRecordingDetails()  #phant TODO
-		result = placeResponseInMessage("details", str(details), 'recording')
+		logs = grapher.get_all_files()
+		log_dict_list = []		
+		for log in logs:
+			log_dict = {}
+			log_dict["name"] = log
+			log_dict["duration"] = "1h32m"
+			log_dict_list.append(log_dict)
+
+		result = placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
 		return result	
 			
 class JCmdShowSavedLog(JsonCommand):
@@ -220,7 +227,6 @@ class JCmdShowSavedLog(JsonCommand):
 		details = recorder.getRecordingDetailsByIndex(logIndex)  #phant TODO
 		result = placeResponseInMessage(str(details), 'saved_recording_details')
 		return result		
-	
 	
 class JCmdGraphLog(JsonCommand):
 	def __init__(self):	
@@ -304,7 +310,7 @@ jcmdMenuRequest = JCmdMenuRequest()
 jCmdCreateNewLog = JCmdCreateNewLog()
 jCmdFinishCurrentLog = JCmdFinishCurrentLog()
 jCmdDeleteLog = JCmdDeleteLog()
-jCmdShowCurrentLog = JCmdShowCurrentLog()
+JCmdShowLogs = JCmdShowLogs()
 jCmdShowSavedLog = JCmdShowSavedLog()
 jCmdGraphLog = JCmdGraphLog()
 jCmdOutputMode = JCmdOutputMode()

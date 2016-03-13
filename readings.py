@@ -24,6 +24,7 @@ class Readings():
          sys.exit(1)
 
       updateString = updateGUI.updateGUI() 
+      self.sock.send(updateString)
        
       while True:             
          self.buildAndQueueReadingsMessage()
@@ -78,7 +79,7 @@ class Readings():
                         'cook_time': cookString, 
                         'output_state': stateString,
                         'control_style': controlStyle,
-                        'hysteresis': hysteresis,
+                        'hysteresis': hysteresis                        
                        }
                }
       self.sock.send(str(dataDict))
