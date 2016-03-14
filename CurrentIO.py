@@ -33,7 +33,7 @@ def getInputState(inputName):
 	if str(inputName) in currentInputReadings.keys():
 		value = currentInputReadings[inputName]	
 
-	value = sensor1.get_sensor_value(inputName)
+	#value = sensor1.get_sensor_value(inputName)
 	return value
 	
 def setInputState(inputName, value):

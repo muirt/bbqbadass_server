@@ -1,0 +1,21 @@
+#! /bin/sh
+# /etc/init.d/badass
+#
+
+touch /var/lock/badass/
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+  start)
+	$SCRIPTS/launch_badass.sh
+    ;;
+  stop)
+	killall python
+    ;;
+  *)
+    echo "Usage: /etc/init.d/badass {start|stop}"
+    exit 1
+    ;;
+esac
+
+exit 0

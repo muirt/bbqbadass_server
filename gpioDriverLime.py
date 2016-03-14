@@ -24,6 +24,7 @@ def outputLevel(name, level):
 def setup():
 	gpio.init() 	
 	for config in outputConfigs:
+		
 		configPin(config['pin'], gpio.OUTPUT, config['level'])
 	
 	
