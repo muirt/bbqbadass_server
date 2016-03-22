@@ -10,7 +10,7 @@ import Queue
 
 import SimpleExampleServer
 
-import readings
+import readings_stream as readings
 import os
 
 mode = "run"

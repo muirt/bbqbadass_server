@@ -21,15 +21,17 @@ class filesystem():
 		with open(name, open_style) as csvfile:
 		    fieldnames = ['grill_temp', 'meat_temp', 'time']
 		    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-		    if(open_style == "w"):
-		    	writer.writeheader()
+		    #if(open_style == "w"):
+		    	#writer.writeheader()
 
 		    field_list_dict = {}
 		    for index, field in enumerate(fieldnames):
 		    	field_list_dict[fieldnames[index]] = list[index]
 
 		    writer.writerow(field_list_dict)
-
+		    #this makes a symbolic link in the 
+		    #www dir to the file in the bbq dir 
+		      
 	def read_from_file(self, name):
 
 		reader_list = []
@@ -38,6 +40,25 @@ class filesystem():
 			for row in reader:
 				reader_list.append(row)
 		return reader_list
+
+	def get_last_line_list(self, name):
+
+		with open(name, "r") as f:			
+			for last in f: pass
+			return last.split(",")
+
+
+	def read_header_from_file(self, name):
+		header_elements = []
+		
+		f = open(name, "r") 
+		header_line = f.readline()
+
+		header_elements = header_line.split(",")
+		
+		f.close()
+		
+		return header_elements
 
 	def list_all_files(self):
 		os.system("ls *.csv > all_files.txt")

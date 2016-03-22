@@ -2,6 +2,7 @@ import json
 import configuration
 import unicodeHelper
 import MReq
+import datetime
 import time
 import CurrentIO
 import os
@@ -10,6 +11,7 @@ import averager
 import tempUtilities
 import filesystem
 import grapher
+import data_stream
 
 import processorDefinition
 if processorDefinition.processor == "BBB":
@@ -80,7 +82,7 @@ class JCmdMeatTempGoal(JsonCommand):
 	def processCommand(self, value):
 		if int(value):
 			configuration.Parameters.MeatTemperatureGoal = int(value)		
-		print configuration.Parameters.MeatTemperatureGoal
+		#print configuration.Parameters.MeatTemperatureGoal
 		configuration.Save()		
 		goal_temp = str(configuration.Parameters.MeatTemperatureGoal)			
 		result = placeResponseInMessage('meat_temperature_goal', goal_temp, 'response')				
@@ -130,13 +132,22 @@ class JCmdSetPointSet(JsonCommand):
 			if configuration.Parameters.SetPoint >= 0:
 				configuration.Parameters.SetPoint -= 1
 		configuration.Save()
+			
+		message = data_stream.get_json('set_point')		
+
+		message['value'][0]['value'] = 237
+
+		return str(message)	
 		
-		setPoint = str(configuration.Parameters.SetPoint)	
-		
-		result = placeResponseInMessage('set_point', setPoint, 'response')
-		
-		return str(result)	
-		
+'''
+	error dialog
+
+		messageDict = {'title': 'Error', 'body': 'you cant do that!', 'button': 'OK'}
+		result = placeResponseInMessage('message', messageDict, 'error')
+		print str(result)
+'''
+
+
 class JCmdControlOutputSet(JsonCommand):
 	def __init__(self):
 		JsonCommand.__init__(self)
@@ -153,19 +164,45 @@ class JCmdCreateNewLog(JsonCommand):
 		self.hasReturnValue = True
 		register(self)
 		
-	def processCommand(self, value):		
-		exists = False
+	def processCommand(self, value):	
+		fs = filesystem.filesystem()
+
+		validFileName = value.replace(" ", "_")
+		exists = fs.file_exists(validFileName + ".csv")
+		
 		result = ""
-		if len(value):			
-			exists = False  #phant TODO	
+		
 		if exists:
-			result = placeResponseInMessage(value, "recording_already_exists")		
+			messageDict = {'title': 'Error', 'body': 'File Exists', 'button': 'OK'}
+			result = placeResponseInMessage('message', messageDict, 'error')
+			return result		
 
-		#fs = filesystem.filesystem()
+		
+		right_now = str(datetime.datetime.now())
 
-		configuration.Parameters.CurrentRecordingName = value
-		configuration.Parameters.CurrentlyRecording = True
-		return result	
+		header_list = []
+		header_list.append(value)
+		header_list.append(validFileName) 
+		header_list.append(right_now)
+
+		
+		for index in range(len(header_list)):
+			header_list[index] = unicodeHelper.getAscii(header_list[index])
+		
+
+		fs = filesystem.filesystem()
+		fs.write_to_file(validFileName, header_list)
+		
+		os.system("./link_csv.sh " + validFileName + ".csv")	
+
+		# configuration.Parameters.CurrentRecordingName = validFileName
+		# configuration.Parameters.CurrentlyRecording = True
+
+
+		log_dict_list = grapher.get_log_file_details()
+		
+		result = placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
+		return result
 	
 class JCmdFinishCurrentLog(JsonCommand):
 	def __init__(self):
@@ -188,12 +225,19 @@ class JCmdDeleteLog(JsonCommand):
 		register(self)
 		
 	def processCommand(self, value):
-		print value
-		#recorder.deleteRecording(value)  #phant TODO
-		if value != "current":
-			return MReq.MReqDictionary["list_saved_logs"].GetMenuData()	
-		else:
-			return None
+		
+		if ".csv" in value:
+			delete_cmd = "/home/olimex/bbqbadass_server/{0}".format(value)
+			delete_ln = "/var/www/bbq_badass_webapp_bootstrap/{0}".format(value)
+			
+			os.remove(delete_cmd)
+			os.remove(delete_ln)
+			
+
+		log_dict_list = grapher.get_log_file_details()
+		
+		result = placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
+		return result
 			
 	
 class JCmdShowLogs(JsonCommand):
@@ -204,16 +248,7 @@ class JCmdShowLogs(JsonCommand):
 		register(self)
 		
 	def processCommand(self, value):	
-		logs = grapher.get_all_files()
-		log_dict_list = []		
-		for log in logs:
-			log_dict = {}
-			log_dict["name"] = log
-			log_dict["duration"] = "1h32m"
-			log_dict_list.append(log_dict)
-
-		result = placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
-		return result	
+		pass
 			
 class JCmdShowSavedLog(JsonCommand):
 	def __init__(self):
@@ -250,7 +285,7 @@ class JCmdMenuRequest(JsonCommand):
 		result = None
 		if value in MReq.MReqDictionary.keys():
 			result = MReq.MReqDictionary[value].GetMenuData()		
-		print str(result)
+		#str(result)
 
 		return result
 

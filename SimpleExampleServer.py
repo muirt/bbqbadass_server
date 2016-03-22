@@ -20,52 +20,100 @@ import grapher
 import jCmd
 import unicodeHelper
 import updateGUI
+import datetime
+import filesystem
+import timeHelper
+
+class BBQClient():
+   def __init__(self, websocket, number):
+      self.player_number = number
+      self.websocket = websocket
+
+clients = []
+
+def enumerate_client():
+   player_sum = 0
+   result = 1 # assume no clients
+   for client in clients:
+      player_sum += client.player_number
+
+   # if there is either a 1 or a 2, return the other
+   # if both, dont allow more clients
+   # if none, default value is 1
+   if player_sum:
+      result = 3 - player_sum
+
+   return result
+
 
 
 class SimpleEcho(WebSocket):
   
    def handleMessage(self):
-      result = parser.JsonParse(self.data)      
-      if result != None:
-         self.sendMessage(result)    
+
+      for client in clients:
+         if client.websocket == self:            
+            result = parser.JsonParse(self.data)
+            if result != None:
+               self.sendMessageSemi(result)
+      
+      # result = parser.JsonParse(self.data)      
+      # if result != None:
+      #    self.sendMessageSemi(result)       
+
+   def sendMessageSemi(self, message):
+      self.sendMessage(message + ";")
 
    def handleConnected(self):      
+      
+      player_number = enumerate_client()
+      
+      if player_number:
+         client = BBQClient(self, player_number)
+         clients.append(client)
+      else:
+         self.close()
+         return
+
+      
       updateString = updateGUI.updateGUI() 
       self.sendMessage(updateString)
-      
-      logs = grapher.get_all_files()
-      log_dict_list = []      
-      for log in logs:
-         log_dict = {}
-         log_dict["name"] = log
-         log_dict["duration"] = "1h32m"
-         log_dict_list.append(log_dict)
+
+      log_dict_list = grapher.get_log_file_details()
 
       result = jCmd.placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
       self.sendMessage(result)
 
-   def handleClose(self):
-      pass
-
-clients = []
-class SimpleChat(WebSocket):
-
-   def handleMessage(self):
-      for client in clients:
-         if client != self:
-            client.sendMessage(self.address[0] + u' - ' + self.data)
-
-   def handleConnected(self):
-      print (self.address, 'connected')
-      for client in clients:
-         client.sendMessage(self.address[0] + u' - connected')
-      clients.append(self)
+      log_dict_list = grapher.get_current_log_file_details()
+      result = jCmd.placeResponseInMessage("log", str(log_dict_list), 'current_log')
+      
+      self.sendMessage(result)
 
    def handleClose(self):
-      clients.remove(self)
-      print (self.address, 'closed')
       for client in clients:
-         client.sendMessage(self.address[0] + u' - disconnected')
+         if client.websocket == self:
+            clients.remove(client)
+
+
+# clients = []
+# class SimpleChat(WebSocket):
+
+#    def handleMessage(self):
+#       for client in clients:
+#          if client != self:
+#             client.sendMessage(self.address[0] + u' - ' + self.data)
+
+#    def handleConnected(self):
+#       print (self.address, 'connected')
+#       for client in clients:
+#          client.sendMessage(self.address[0] + u' - connected')
+#       clients.append(self)
+
+#    def handleClose(self):
+#       clients.remove(self)
+#       print (self.address, 'closed')
+#       for client in clients:
+#          client.sendMessage(self.address[0] + u' - disconnected')
 
 
 
