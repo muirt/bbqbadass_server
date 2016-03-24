@@ -6,7 +6,7 @@ import jsonCommand
 
     
 
-def JsonParse(payload):	
+def JsonParse(payload, player):	
 	result = None
 	resultListString = ""
 	resultList = []
@@ -14,22 +14,22 @@ def JsonParse(payload):
 
 	for key in jsonCommand.jCmdDictionary.keys():		
 		if jsonObject.has_key(key):		
-			result = process(key, jsonObject[key])			
+			result = process(key, jsonObject[key] , player)			
 		
 	return result
 
 
-def process(key, value):
+def process(key, value, player):
 	
 	jCmdDictionary = jsonCommand.jCmdDictionary
 	
 	result = None
 	if jCmdDictionary.has_key(key):		
 		if(jCmdDictionary[key].hasReturnValue):
-			result = jsonCommand.process_command(key, value)
+			result = jCmdDictionary[key].processCommand(value, player)
 			
 		else:
-			jCmdDictionary[key].processCommand(value)
-			configuration.Save()
+			jCmdDictionary[key].processCommand(value, player)
+		configuration.Save()
 					
 	return result

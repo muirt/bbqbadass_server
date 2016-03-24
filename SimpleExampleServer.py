@@ -24,6 +24,7 @@ import datetime
 import filesystem
 import timeHelper
 import responseWrapper
+import data_stream
 
 class BBQClient():
    def __init__(self, websocket, number):
@@ -31,18 +32,22 @@ class BBQClient():
       self.websocket = websocket
 
 clients = []
+max_clients = 3
+
+
 
 def enumerate_client():
    player_sum = 0
-   result = 1 # assume no clients
+   result = 0 
+   clients_found = []
+   
    for client in clients:
-      player_sum += client.player_number
+      clients_found.append(client.player_number)
 
-   # if there is either a 1 or a 2, return the other
-   # if both, dont allow more clients
-   # if none, default value is 1
-   if player_sum:
-      result = 3 - player_sum
+   for index in range(max_clients):
+      if index + 1 not in clients_found:
+         result = index + 1  
+         break 
 
    return result
 
@@ -53,16 +58,15 @@ class SimpleEcho(WebSocket):
    def handleMessage(self):
 
       for client in clients:
-         if client.websocket == self:
-            
-            result = parser.JsonParse(self.data)
-            if result != None:
-               self.sendMessageSemi(result)
-      
-      # result = parser.JsonParse(self.data)      
-      # if result != None:
-      #    self.sendMessageSemi(result)       
-
+         if client.websocket == self:            
+            result = parser.JsonParse(self.data, client.player_number)
+            if result != None:               
+               if result['message_type'] == "multiple":                  
+                  for index, message in enumerate(result['messages']):                     
+                     for outClient in clients:                        
+                        if outClient.player_number == index+1:
+                           outClient.websocket.sendMessageSemi(str(message))
+   
    def sendMessageSemi(self, message):
       self.sendMessage(message + ";")
 
@@ -77,21 +81,16 @@ class SimpleEcho(WebSocket):
          self.close()
          return
 
-      
-      updateString = updateGUI.updateGUI() 
-      self.sendMessage(updateString)
+      if player_number < 3:
+         result = data_stream.get_json('player_token', player_number)
+         self.sendMessage(result)
 
-      log_dict_list = grapher.get_log_file_details()
-
-      result = self.placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
-      self.sendMessage(result)
-
-      log_dict_list = grapher.get_current_log_file_details()
-      result = self.placeResponseInMessage("log", str(log_dict_list), 'current_log')
-      
-      self.sendMessage(result)
+      if player_number == 3:
+         result = data_stream.get_json('clear_board', player_number)
+         self.sendMessage(result)
 
    def handleClose(self):
+      
       for client in clients:
          if client.websocket == self:
             clients.remove(client)
@@ -108,29 +107,7 @@ class SimpleEcho(WebSocket):
             }
       return  str(messageDict).replace('"', ' ')
 
-# clients = []
-# class SimpleChat(WebSocket):
-
-#    def handleMessage(self):
-#       for client in clients:
-#          if client != self:
-#             client.sendMessage(self.address[0] + u' - ' + self.data)
-
-#    def handleConnected(self):
-#       print (self.address, 'connected')
-#       for client in clients:
-#          client.sendMessage(self.address[0] + u' - connected')
-#       clients.append(self)
-
-#    def handleClose(self):
-#       clients.remove(self)
-#       print (self.address, 'closed')
-#       for client in clients:
-#          client.sendMessage(self.address[0] + u' - disconnected')
-
-
-
-   
+  
 
 def start_server():
    parser = OptionParser(usage="usage: %prog [options]", version="%prog 1.0")
@@ -143,6 +120,8 @@ def start_server():
 
    (options, args) = parser.parse_args()
 
+   data_stream.register_all_streams()
+
    os.system("rm ./unix_socket")
    cls = SimpleEcho
    if options.example == 'chat':
@@ -152,15 +131,5 @@ def start_server():
       server = SimpleSSLWebSocketServer(options.host, options.port, cls, options.cert, options.cert, version=options.ver)
    else:
       server = SimpleWebSocketServer(options.host, options.port, cls)
-
-   # def close_sig_handler(signal, frame):
-   #    server.close()
-   #    sys.exit()
-
-   # serverThread = threading.Thread(target=other_thread)
-   # serverThread.daemon = True
-   # serverThread.start()
-
-   #signal.signal(signal.SIGINT, close_sig_handler)
 
    server.serveforever()

@@ -8,7 +8,7 @@ class JsonCommand:
 	def hasKey(self, key):
 		return self.key == key
 		
-	def processCommand(self, value):
+	def processCommand(self, value, player):
 		pass
 
 jCmdDictionary = {}
@@ -17,5 +17,3 @@ jCmdDictionary = {}
 def register(jcmd):	
 	jCmdDictionary[jcmd.key] = jcmd
 
-def process_command(key, value):
-	return jCmdDictionary[key].processCommand(value)
