@@ -3,37 +3,30 @@ import controlThread
 import StorageThread
 import threading
 import time
-
 import configuration
-import Queue
-
-
 import SimpleExampleServer
-
 import readings_stream as readings
 import os
 
-mode = "run"
-serverControl = None
-
-
-def update():
-	return serverControl.updateGUI()
-
 if __name__ == "__main__":
 
-	
-	collectQueue = Queue.Queue()
-	readingsQueue = Queue.Queue()
-
 	configuration.Load()
+	
 	collectObject = collectThread.CollectThread()
 	controlObject = controlThread.ControlThread()
 	storageObject = StorageThread.StorageThread()
+	readingsObject = readings.Readings()
+
 	collThread = threading.Thread(target=collectObject.PeriodicCollect)
 	collThread.daemon = True
 	collThread.start()
 
+	serverThread = threading.Thread(target=SimpleExampleServer.start_server)
+	serverThread.daemon = True
+	serverThread.start()
+
+	#wait for collection and server to start before 
+	#trying to store, act upon, or send sensor readings
 	time.sleep(3)
 
 	contThread = threading.Thread(target=controlObject.ControlLoop)
@@ -44,31 +37,9 @@ if __name__ == "__main__":
 	storageThread.daemon = True
 	storageThread.start()
 
-
-	# serverControl = server.ServerControl()
-	#serverControl = server.ServerControl()
-
-	#serverSingleton.setServerControl(serverControl)
-	
-
-	#readings = getReadings.ReadingsThread()
-	#readingsThread = threading.Thread(target=pyws.getReadings)
-	
-
-	
-	simplerThread = threading.Thread(target=SimpleExampleServer.start_server)
-	simplerThread.daemon = True
-	simplerThread.start()
-
-	time.sleep(3)
-
-	readingsObject = readings.Readings()
-
 	readingsThread = threading.Thread(target=readingsObject.getReadings)
 	readingsThread.daemon = True
 	readingsThread.start()
-
-	#SimpleExampleServer.start_server()
 
 	while True:
 		pass
