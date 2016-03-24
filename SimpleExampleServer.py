@@ -23,6 +23,7 @@ import updateGUI
 import datetime
 import filesystem
 import timeHelper
+import responseWrapper
 
 class BBQClient():
    def __init__(self, websocket, number):
@@ -52,7 +53,8 @@ class SimpleEcho(WebSocket):
    def handleMessage(self):
 
       for client in clients:
-         if client.websocket == self:            
+         if client.websocket == self:
+            
             result = parser.JsonParse(self.data)
             if result != None:
                self.sendMessageSemi(result)
@@ -81,11 +83,11 @@ class SimpleEcho(WebSocket):
 
       log_dict_list = grapher.get_log_file_details()
 
-      result = jCmd.placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
+      result = self.placeResponseInMessage("logs", str(log_dict_list), 'saved_logs')
       self.sendMessage(result)
 
       log_dict_list = grapher.get_current_log_file_details()
-      result = jCmd.placeResponseInMessage("log", str(log_dict_list), 'current_log')
+      result = self.placeResponseInMessage("log", str(log_dict_list), 'current_log')
       
       self.sendMessage(result)
 
@@ -94,6 +96,17 @@ class SimpleEcho(WebSocket):
          if client.websocket == self:
             clients.remove(client)
 
+   
+   def placeResponseInMessage(self, string, val, key):
+
+      messageDict = {
+            'secret':'badass', 
+            'target':key, 
+            'value': { 
+                     string: val
+                    }
+            }
+      return  str(messageDict).replace('"', ' ')
 
 # clients = []
 # class SimpleChat(WebSocket):
